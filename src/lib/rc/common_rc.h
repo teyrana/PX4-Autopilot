@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #include "crsf.h"
-#include "dsm.h"
+#include "dsm.hpp"
 #include "ghst.hpp"
 #include "sbus.h"
 #include "st24.h"
