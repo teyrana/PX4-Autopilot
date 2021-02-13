@@ -1,6 +1,6 @@
 ############################################################################
 #
-#   Copyright (c) 2017 PX4 Development Team. All rights reserved.
+#   Copyright (c) 2015 PX4 Development Team. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -30,8 +30,13 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ############################################################################
-
-add_subdirectory(bst)
-add_subdirectory(frsky_telemetry)
-add_subdirectory(hott)
-add_subdirectory(iridiumsbd)
+px4_add_module(
+	MODULE drivers__spektrum_telemetry
+	MAIN spektrum_telemetry
+	STACK_MAIN 1200
+	COMPILE_FLAGS
+	SRCS
+		dsm_telemetry.cpp
+		spektrum_telemetry.cpp
+	DEPENDS
+	)
