@@ -88,7 +88,11 @@ RCInput::init()
 
 	// dsm_init sets some file static variables and returns a file descriptor
 	// it also powers on the radio if needed
-	_rcs_fd = dsm_init(_device);
+
+	// /// TODO: old version
+	// _rcs_fd = dsm_init(_device);
+
+	_rcs_fd = dsm_init(RC_SERIAL_PORT, board_supports_single_wire(RC_UXART_BASE));
 
 	if (_rcs_fd < 0) {
 		return -errno;
@@ -445,9 +449,12 @@ void RCInput::Run()
 		case RC_SCAN_DSM:
 			if (_rc_scan_begin == 0) {
 				_rc_scan_begin = cycle_timestamp;
-				//			// Configure serial port for DSM
-				dsm_config(_rcs_fd);
-				rc_io_invert(false);
+
+				// Configure serial port for DSM
+				// dsm_config(_rcs_fd);  // old version
+				// rc_io_invert(false);  // old version
+				dsm_config(_rcs_fd, board_supports_single_wire(RC_UXART_BASE));
+				rc_io_invert(false, RC_UXART_BASE);
 
 			} else if (_rc_scan_locked
 				   || cycle_timestamp - _rc_scan_begin < rc_scan_max) {
@@ -458,7 +465,7 @@ void RCInput::Run()
 
 					// parse new data
 					rc_updated = dsm_parse(cycle_timestamp, &_rcs_buf[0], newBytes, &_raw_rc_values[0], &_raw_rc_count,
-							       &dsm_11_bit, &frame_drops, &dsm_rssi, input_rc_s::RC_INPUT_MAX_CHANNELS);
+							       &dsm_11_bit, &frame_drops, &dsm_rssi, nullptr, input_rc_s::RC_INPUT_MAX_CHANNELS);
 
 					if (rc_updated) {
 						// we have a new DSM frame. Publish it.
@@ -480,8 +487,10 @@ void RCInput::Run()
 			if (_rc_scan_begin == 0) {
 				_rc_scan_begin = cycle_timestamp;
 				// Configure serial port for DSM
-				dsm_config(_rcs_fd);
-				rc_io_invert(false);
+				// dsm_config(_rcs_fd);  // old version
+				// rc_io_invert(false);  // old version
+				dsm_config(_rcs_fd, false);
+				rc_io_invert(false, RC_UXART_BASE);
 
 			} else if (_rc_scan_locked
 				   || cycle_timestamp - _rc_scan_begin < rc_scan_max) {
@@ -528,8 +537,10 @@ void RCInput::Run()
 			if (_rc_scan_begin == 0) {
 				_rc_scan_begin = cycle_timestamp;
 				// Configure serial port for DSM
-				dsm_config(_rcs_fd);
-				rc_io_invert(false);
+				// dsm_config(_rcs_fd);  // old version
+				// rc_io_invert(false);  // old version
+				dsm_config(_rcs_fd, false);
+				rc_io_invert(false, RC_UXART_BASE);
 
 			} else if (_rc_scan_locked
 				   || cycle_timestamp - _rc_scan_begin < rc_scan_max) {
@@ -763,6 +774,12 @@ int RCInput::custom_command(int argc, char *argv[])
 	}
 
 #endif /* SPEKTRUM_POWER */
+
+	// if (!strcmp(verb, "bind_srxl")) {
+	// 	PX4_INFO("Binding spektrum srxl receiver");
+	// 	dsm_bind_srxl(_rcs_fd);
+	// 	return 0;
+	// }
 
 	/* start the FMU if not running */
 	if (!is_running()) {
