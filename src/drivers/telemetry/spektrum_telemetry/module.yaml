@@ -1,0 +1,7 @@
+module_name: Spektrum Telemetry
+serial_config:
+    - command: spektrum_telemetry start -d ${SERIAL_DEV}
+      port_config_param:
+        name: TEL_SPM_CONFIG
+        group: Telemetry
+
