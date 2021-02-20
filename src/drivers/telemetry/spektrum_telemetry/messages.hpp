@@ -462,13 +462,20 @@ public:
 		attMag->identifier = TELE_DEVICE_ATTMAG;
 		attMag->sID = TELE_FRAMETYPE_SID;
 
-		attMag->attRoll = (int16_t)(rad2deg * euler.phi() * 10.0f);                     // pulse leading edges
-		attMag->attPitch = (int16_t)(rad2deg * euler.theta() * 10.0f);   // vbat is in units of 0.1V
-		attMag->attYaw = (int16_t)(rad2deg * euler.psi() * 10.0f);                     // temperature
-		attMag->magX = mag.magnetometer_ga[0] * 10000.0f;                     // temperature
-		attMag->magY = mag.magnetometer_ga[1] * 10000.0f;                     // temperature
-		attMag->magZ = mag.magnetometer_ga[2] * 10000.0f;                     // temperature
-		attMag->heading = (int16_t)(rad2deg * pos.yaw * 10.0f);                     // temperature
+		attMag->attRoll = (int16_t)(rad2deg * euler.phi() * 10.0f);
+		attMag->attPitch = (int16_t)(rad2deg * euler.theta() * 10.0f);
+		attMag->attYaw = (int16_t)(rad2deg * euler.psi() * 10.0f);
+		attMag->magX = mag.magnetometer_ga[0] * 10000.0f;
+		attMag->magY = mag.magnetometer_ga[1] * 10000.0f;
+		attMag->magZ = mag.magnetometer_ga[2] * 10000.0f;
+
+		// TODO:  re-implement
+		// \warn Not Tested -- not sure if this is the same meaning / semantics
+		attMag->heading = attMag->attYaw;
+		// \warn NYI
+		// attMag->heading = (int16_t)(rad2deg * f?(att.q) * 10.0f);
+		// \warn obsolete
+		// attMag->heading = (int16_t)(rad2deg * pos.yaw * 10.0f);
 
 		return true;
 	}

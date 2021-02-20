@@ -39,4 +39,6 @@ px4_add_module(
 		dsm_telemetry.cpp
 		spektrum_telemetry.cpp
 	DEPENDS
+	MODULE_CONFIG
+		module.yaml
 	)

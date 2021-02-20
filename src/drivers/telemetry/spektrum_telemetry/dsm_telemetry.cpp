@@ -39,7 +39,7 @@
  * @author Kurt Kiefer <kekiefer@gmail.com>
  */
 
-#include <px4_config.h>
+#include <px4_platform_common/px4_config.h>
 #include <board_config.h>
 #include <px4_defines.h>
 

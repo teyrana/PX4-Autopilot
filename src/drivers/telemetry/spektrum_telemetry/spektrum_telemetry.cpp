@@ -48,20 +48,20 @@
  */
 
 
-#include <px4_config.h>
 #include <board_config.h>
 #include <px4_defines.h>
-#include <px4_module_params.h>
-#include <px4_tasks.h>
-#include <px4_posix.h>
+#include <px4_platform_common/getopt.h>
+#include <px4_platform_common/module.h>
+#include <px4_platform_common/module_params.h>
+#include <px4_platform_common/posix.h>
+#include <px4_platform_common/px4_config.h>
+#include <px4_platform_common/tasks.h>
 
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
 #include <math.h>
 
-#include <px4_module.h>
-#include <px4_getopt.h>
 #include <systemlib/err.h>
 #include <drivers/drv_hrt.h>
 #include <uORB/topics/input_rc.h>
