@@ -137,11 +137,13 @@ static int spektrum_telemetry_thread_main(int argc, char *argv[])
 
 	dsm_proto_init();
 	int ret = dsm_config(uart, board_supports_single_wire(RC_UXART_BASE));
+
 	if (ret != 0) {
 		close(uart);
 		rc_device_name = NULL;
 		return -1;
 	}
+
 	dsm_init_telemetry();
 	dsm_update_telemetry();
 
@@ -238,10 +240,10 @@ int spektrum_telemetry_main(int argc, char *argv[])
 
 		thread_should_exit = false;
 		spektrum_task = px4_task_spawn_cmd("spektrum_telemetry",
-						SCHED_DEFAULT,
-						SCHED_PRIORITY_SLOW_DRIVER, 1350,
-						spektrum_telemetry_thread_main,
-						(char *const *)argv);
+						   SCHED_DEFAULT,
+						   SCHED_PRIORITY_SLOW_DRIVER, 1350,
+						   spektrum_telemetry_thread_main,
+						   (char *const *)argv);
 
 		while (!thread_running) {
 			usleep(200);

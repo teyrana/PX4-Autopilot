@@ -37,6 +37,7 @@
  * RC protocol definition for Spektrum SRXL
  *
  * @author Kurt Kiefer <kekiefer@gmail.com>
+ * @author Daniel Williams <equipoise@gmail.com>
  */
 
 #pragma once
@@ -47,6 +48,14 @@
 #define SRXL_MAX_LENGTH				64
 
 typedef uint8_t SrxlBuffer[SRXL_MAX_LENGTH];
+
+// // Source:
+// // https://github.com/SpektrumRC/SRXL2/blob/master/Docs/SRXL2%20Specification.pdf
+// #define SRXL2_HEADER_ID			0xA6
+// #define SRXL2_PACKET_MIN_LENGTH		5
+// #define SRXL2_PACK_MAX_LENGTH		80
+//
+// typedef uint8_t Srxl2Buffer[SRXL_MAX_LENGTH];
 
 class SrxlEncoder
 {

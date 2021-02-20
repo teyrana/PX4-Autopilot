@@ -37,6 +37,7 @@
  * RC protocol definition for Spektrum RC
  *
  * @author Lorenz Meier <lorenz@px4.io>
+ * @author Daniel Williams <equipoise@gmail.com>
  */
 
 #pragma once
@@ -50,7 +51,7 @@ __BEGIN_DECLS
 
 #define DSM_FRAME_SIZE		16		/**< DSM frame size in bytes */
 #define DSM_FRAME_CHANNELS	7		/**< Max supported DSM channels per frame */
-#define DSM_MAX_CHANNEL_COUNT   18  /**< Max channel count of any DSM RC */
+#define DSM_MAX_CHANNEL_COUNT   20 		/**< Max channel count of any spektrum receiver */
 #define DSM_BUFFER_SIZE		(DSM_FRAME_SIZE + DSM_FRAME_SIZE / 2)
 
 
@@ -70,10 +71,11 @@ __EXPORT void	dsm_deinit(void);
 __EXPORT void	dsm_proto_init(void);
 __EXPORT int	dsm_config(int dsm_fd, bool singlewire);
 __EXPORT bool	dsm_input(int dsm_fd, uint16_t *values, uint16_t *num_values, bool *dsm_11_bit, uint8_t *n_bytes,
-			  uint8_t **bytes, int8_t *rssi, unsigned* frame_drops, uint8_t *phase, unsigned max_values);
+			  uint8_t **bytes, int8_t *rssi, unsigned *frame_drops, uint8_t *phase, unsigned max_values);
 
 __EXPORT bool	dsm_parse(const uint64_t now, const uint8_t *frame, const unsigned len, uint16_t *values,
-			  uint16_t *num_values, bool *dsm_11_bit, unsigned *frame_drops, int8_t *rssi_percent, uint8_t *phase, uint16_t max_channels);
+			  uint16_t *num_values, bool *dsm_11_bit, unsigned *frame_drops, int8_t *rssi_percent, uint8_t *phase,
+			  uint16_t max_channels);
 
 #ifdef SPEKTRUM_POWER
 __EXPORT void	dsm_bind(uint16_t cmd, int pulses);

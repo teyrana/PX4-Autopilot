@@ -4,7 +4,7 @@
 
 void SrxlEncoder::setPayload(void *payload, size_t length, uint8_t version)
 {
-	srxl_frame_header_t *srxl = (srxl_frame_header_t*)srxlBuf;
+	srxl_frame_header_t *srxl = (srxl_frame_header_t *)srxlBuf;
 
 	uint16_t crc = crc16((const uint8_t *)payload, length);
 

@@ -776,7 +776,7 @@ bool dsm_decode(hrt_abstime frame_time, uint16_t *values, uint16_t *num_values, 
  * @return true=decoded raw channel values updated, false=no update
  */
 bool dsm_input(int fd, uint16_t *values, uint16_t *num_values, bool *dsm_11_bit, uint8_t *n_bytes, uint8_t **bytes,
-		int8_t *rssi, unsigned *frame_drops, uint8_t *phase, unsigned max_values)
+	       int8_t *rssi, unsigned *frame_drops, uint8_t *phase, unsigned max_values)
 {
 	/*
 	 * The S.BUS protocol doesn't provide reliable framing,
@@ -818,7 +818,8 @@ bool dsm_input(int fd, uint16_t *values, uint16_t *num_values, bool *dsm_11_bit,
 }
 
 bool dsm_parse(const uint64_t now, const uint8_t *frame, const unsigned len, uint16_t *values,
-		uint16_t *num_values, bool *dsm_11_bit, unsigned *frame_drops, int8_t *rssi_percent, uint8_t *phase, uint16_t max_channels)
+	       uint16_t *num_values, bool *dsm_11_bit, unsigned *frame_drops, int8_t *rssi_percent, uint8_t *phase,
+	       uint16_t max_channels)
 {
 	/* this is set by the decoding state machine and will default to false
 	 * once everything that was decodable has been decoded.
@@ -887,6 +888,7 @@ bool dsm_parse(const uint64_t now, const uint8_t *frame, const unsigned len, uin
 					if (dsm_partial_frame_count == SrxlEncoder::getFrameLength(dsm_frame)) {
 						dsm_partial_frame_count = 0;
 					}
+
 					break;
 				}
 
