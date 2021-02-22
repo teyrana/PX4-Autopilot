@@ -92,7 +92,11 @@ RCInput::init()
 	// /// TODO: old version
 	// _rcs_fd = dsm_init(_device);
 
-	_rcs_fd = dsm_init(RC_SERIAL_PORT, board_supports_single_wire(RC_UXART_BASE));
+	// see:  px4_platform_common/board_common.h:434
+#ifndef RC_SERIAL_SINGLEWIRE
+	static_assert("executable doesn't support single wire -- cannot support DSM / SRXL");
+#endif
+	_rcs_fd = dsm_init(_device,  board_rc_singlewire(_device));
 
 	if (_rcs_fd < 0) {
 		return -errno;
@@ -452,9 +456,8 @@ void RCInput::Run()
 
 				// Configure serial port for DSM
 				// dsm_config(_rcs_fd);  // old version
-				// rc_io_invert(false);  // old version
-				dsm_config(_rcs_fd, board_supports_single_wire(RC_UXART_BASE));
-				rc_io_invert(false, RC_UXART_BASE);
+				dsm_config(_rcs_fd, board_rc_singlewire(_device) );
+				rc_io_invert(false);
 
 			} else if (_rc_scan_locked
 				   || cycle_timestamp - _rc_scan_begin < rc_scan_max) {
@@ -490,7 +493,7 @@ void RCInput::Run()
 				// dsm_config(_rcs_fd);  // old version
 				// rc_io_invert(false);  // old version
 				dsm_config(_rcs_fd, false);
-				rc_io_invert(false, RC_UXART_BASE);
+				rc_io_invert(false);
 
 			} else if (_rc_scan_locked
 				   || cycle_timestamp - _rc_scan_begin < rc_scan_max) {
@@ -540,7 +543,7 @@ void RCInput::Run()
 				// dsm_config(_rcs_fd);  // old version
 				// rc_io_invert(false);  // old version
 				dsm_config(_rcs_fd, false);
-				rc_io_invert(false, RC_UXART_BASE);
+				rc_io_invert(false);
 
 			} else if (_rc_scan_locked
 				   || cycle_timestamp - _rc_scan_begin < rc_scan_max) {
@@ -822,6 +825,7 @@ int RCInput::print_status()
 		case RC_SCAN_DSM:
 			// DSM status output
 #if defined(SPEKTRUM_POWER)
+			PX4_INFO("Spektrum Telemetry: %s", _dsm_telemetry ? "yes" : "no");
 #endif
 			break;
 
