@@ -34,9 +34,10 @@
 /**
  * @file dsm_telemetry.h
  *
- * Helper functions for DSM/SRXL telemetry support
+ * Helper class for DSM/SRXL telemetry support
  *
  * @author Kurt Kiefer <kekiefer@gmail.com>
+ * @author Daniel Williams <equipoise@gmail.com>
  */
 
 #pragma once
@@ -46,10 +47,39 @@
 #include <board_config.h>
 #include <px4_defines.h>
 
-__BEGIN_DECLS
+class DSMTelemetry
+{
+public:
 
-__EXPORT void dsm_update_telemetry(void);
-__EXPORT void dsm_init_telemetry(void);
-__EXPORT size_t srxl_write_next(int dsm_fd);
+	DSMTelemetry() = delete;
+	/**
+	 * @param uart_fd file descriptor for the UART to use. It is expected to be configured
+	 * already.
+	 */
+	DSMTelemetry(int uart_fd);
+	~DSMTelemetry() = default;
 
-__END_DECLS
+	/**
+	 * Send telemetry data. Call this regularly (i.e. at 100Hz), it will automatically
+	 * limit the sending rate.
+	 * @return true if new data sent
+	 */
+	bool update( const hrt_abstime & now );
+
+private: // deprecated functions
+	void dsm_update_telemetry(void);
+	void dsm_init_telemetry(void);
+
+	// dead code: this function is never called
+	// size_t srxl_write_next(int dsm_fd);
+
+private:
+	hrt_abstime _last_update{0};
+
+	/// number of different telemetry data types
+	static constexpr int num_data_types{4}; // not sure what this number should actually be....
+	int _next_type{0};
+
+	int _uart_fd;
+
+};

@@ -95,7 +95,38 @@ static SpektrumTelemetryItem *const _telemetryItems[] = {
 
 #define TELEMETRY_ITEM_COUNT (sizeof(_telemetryItems) / sizeof(SpektrumTelemetryItem*))
 
-static void _dsm_update_telemetry(void)
+
+DSMTelemetry(int uart_fd):
+	_uart_fd(uart_fd)
+{
+}
+
+bool update( const hrt_abstime & now )
+{
+	const int update_rate_hz = 10;
+
+	if (now - _last_update <= 1_s / (update_rate_hz * num_data_types)) {
+		return false;
+	}
+
+	bool sent = false;
+	switch(_next_type){
+	case 0:
+	case 1:
+	case 2:
+	case 3:
+	default:
+		sent = _dsm_update_telemetry();
+		break;
+	}
+
+	_last_update = now;
+	_next_type = (_next_type + 1) & num_data_type;
+
+	return sent;
+}
+
+static bool _dsm_update_telemetry(void)
 {
 	static uint32_t telemetry_frame_count = 0;
 	telemetry_frame_t frame;
@@ -138,11 +169,7 @@ static void _dsm_update_telemetry(void)
 
 	srxl.setPayload(&frame, sizeof(frame));
 	telemetry_frame_count++;
-}
-
-void dsm_update_telemetry(void)
-{
-	_dsm_update_telemetry();
+	return true;
 }
 
 void dsm_init_telemetry(void)
@@ -157,17 +184,17 @@ void dsm_init_telemetry(void)
 	}
 }
 
-size_t srxl_write_next(int fd)
-{
-	size_t total = 0;
-	SrxlBuffer *srxlBuffer;
-	size_t srxlBufLen = srxl.getFrame(&srxlBuffer);
+// size_t srxl_write_next(int fd)
+// {
+// 	size_t total = 0;
+// 	SrxlBuffer *srxlBuffer;
+// 	size_t srxlBufLen = srxl.getFrame(&srxlBuffer);
 
-	while (srxlBufLen > 0) {
-		ssize_t written = write(fd, &(*srxlBuffer)[total], srxlBufLen);
-		srxlBufLen -= written;
-		total += written;
-	}
+// 	while (srxlBufLen > 0) {
+// 		ssize_t written = write(fd, &(*srxlBuffer)[total], srxlBufLen);
+// 		srxlBufLen -= written;
+// 		total += written;
+// 	}
 
-	return total;
-}
+// 	return total;
+// }
