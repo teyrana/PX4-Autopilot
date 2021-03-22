@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2013-2014 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2013-2021 PX4 Development Team. All rights reserved.
  *   Author: Stefan Rado <px4@sradonia.net>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,17 +33,10 @@
  ****************************************************************************/
 
 /**
- * @file frsky_telemetry.c
- * @author Stefan Rado <px4@sradonia.net>
- * @author Mark Whitehorn <kd0aij@github.com>
- * @author Gianni Carbone <gianni.carbone@gmail.com>
+ * @file spektrum_telemetry.cpp
+ * @author Kurt Kiefer <kekiefer@gmail.com>
+ * @author Daniel Williams <equipoise@gmail.com>
  *
- * FrSky D8 mode and SmartPort (D16 mode) telemetry implementation.
- * Compatibility with hardware flow control serial port.
- *
- * This daemon emulates the FrSky Sensor Hub for D8 mode.
- * For X series receivers (D16 mode) it emulates SmartPort sensors by responding to polling
- * packets received from an attached FrSky X series receiver.
  *
  */
 
