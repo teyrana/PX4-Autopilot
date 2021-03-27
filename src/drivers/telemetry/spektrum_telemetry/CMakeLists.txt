@@ -38,7 +38,6 @@ px4_add_module(
 	SRCS
 		dsm_telemetry.cpp
 		spektrum_telemetry.cpp
-	DEPENDS
 	MODULE_CONFIG
 		module.yaml
 	)

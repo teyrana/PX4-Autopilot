@@ -39,10 +39,6 @@
  * Decodes into the global PPM buffer and updates accordingly.
  */
 
-#include <px4_platform_common/px4_config.h>
-#include <board_config.h>
-#include <px4_platform_common/defines.h>
-
 #include <fcntl.h>
 #include <math.h>
 #include <unistd.h>
@@ -61,6 +57,26 @@
 
 #include <include/containers/Bitset.hpp>
 
+
+#if 0 // enable debugging output
+#define DSM_WARN PX4_WARN
+#else
+#define DSM_WARN(...)
+#endif
+
+#if 0 // enable non-verbose debugging
+#define DSM_DEBUG PX4_WARN
+#else
+#define DSM_DEBUG(...)
+#endif
+
+// verbose debugging--Careful when enabling: it leads to too much output, causing dropped bytes
+#if 0
+#define DSM_VERBOSE PX4_WARN
+#else
+#define DSM_VERBOSE(...)
+#endif
+
 #if defined(__PX4_NUTTX)
 #include <nuttx/arch.h>
 #define dsm_udelay(arg)    up_udelay(arg)
@@ -68,7 +84,7 @@
 #define dsm_udelay(arg) px4_usleep(arg)
 #endif
 
-// #define DSM_DEBUG
+
 
 static enum DSM_DECODE_STATE {
 	DSM_DECODE_STATE_DESYNC = 0,
@@ -389,6 +405,12 @@ dsm_config(int fd, bool singlewire)
 			 */
 #ifdef TIOCSSINGLEWIRE
 			ioctl(fd, TIOCSSINGLEWIRE, SER_SINGLEWIRE_ENABLED);
+
+			// this is how the 'frsky_telemetry' module sets this:
+			// duplicates 'set_uart_single_wire(int, bool)' in frsky_telemetry.cpp
+			if ( 0 > ioctl(fd, TIOCSSINGLEWIRE, SER_SINGLEWIRE_ENABLED | SER_SINGLEWIRE_PUSHPULL | SER_SINGLEWIRE_PULLDOWN)) {
+				DSM_WARN("setting TIOCSSINGLEWIRE (for Spektrum Telemetry) failed");
+			}
 #endif
 		}
 
@@ -425,7 +447,7 @@ void dsm_proto_init()
  * @param[in] device Device name of DSM UART
  */
 int
-dsm_init(const char *device, bool singlewire)
+dsm_init(const char *device)
 {
 	if (dsm_fd < 0) {
 		dsm_fd = open(device, O_RDWR | O_NONBLOCK);
@@ -433,7 +455,13 @@ dsm_init(const char *device, bool singlewire)
 
 	dsm_proto_init();
 
-	int ret = dsm_config(dsm_fd, singlewire);
+	// see:  px4_platform_common/board_common.h:434
+	int ret;
+#ifdef RC_SERIAL_SINGLEWIRE
+	ret = dsm_config(dsm_fd, board_rc_singlewire(device));
+#else
+	ret = dsm_config(dsm_fd, false);
+#endif
 
 	if (!ret) {
 		return dsm_fd;
@@ -532,21 +560,20 @@ typedef struct dsm_bind_s {
 } dsm_bind_t;
 #pragma pack(pop)
 
-static SrxlEncoder srxl;
-
 ssize_t dsm_bind_srxl(int fd)
 {
+	SrxlEncoder srxl;
+
 	SrxlBuffer *buffer;
 	size_t srxl_length;
 
 	dsm_bind_t payload;
 
-	uuid_uint32_t uid;
+	uint32_t uid = 12345678;
 	//board_get_uuid32(uid);
-	*uid = 12345678;
 
 	payload.request = 0xEB;
-	payload.guid = *uid;
+	payload.guid = uid;
 	payload.type = 0x09; //0xB2;
 	payload.chip_id = 0;
 

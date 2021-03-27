@@ -200,7 +200,7 @@ controls_init(void)
 	system_state.rc_channels_timestamp_valid = 0;
 
 	/* DSM input (USART1) */
-	_dsm_fd = dsm_init("/dev/ttyS0", false);
+	_dsm_fd = dsm_init("/dev/ttyS0");
 
 	/* S.bus input (USART3) */
 	_sbus_fd = sbus_init("/dev/ttyS2", false);

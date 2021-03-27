@@ -42,36 +42,43 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <px4_platform_common/px4_config.h>
+#include <cstdint>
+
 #include <board_config.h>
+#include <drivers/drv_hrt.h>
 #include <px4_defines.h>
+#include <px4_platform_common/px4_config.h>
+
+// #include <drivers/device/device.h>
+// #include <drivers/drv_rc_input.h>
+// #include <drivers/drv_pwm_output.h>
+// #include <drivers/drv_sbus.h>
 
 class DSMTelemetry
 {
 public:
 
+	/// \brief enforce using the construct with a serial-port file-descriptior
 	DSMTelemetry() = delete;
+
 	/**
-	 * @param uart_fd file descriptor for the UART to use. It is expected to be configured
+	 * @param fd file descriptor for the UART to use. It is expected to be configured
 	 * already.
 	 */
-	DSMTelemetry(int uart_fd);
+	DSMTelemetry(int _fd);
+
 	~DSMTelemetry() = default;
+
 
 	/**
 	 * Send telemetry data. Call this regularly (i.e. at 100Hz), it will automatically
 	 * limit the sending rate.
 	 * @return true if new data sent
 	 */
+	bool update();
 	bool update( const hrt_abstime & now );
 
-private: // deprecated functions
-	void dsm_update_telemetry(void);
-	void dsm_init_telemetry(void);
-
-	// dead code: this function is never called
-	// size_t srxl_write_next(int dsm_fd);
+	size_t write_next(int fd);
 
 private:
 	hrt_abstime _last_update{0};
@@ -80,6 +87,6 @@ private:
 	static constexpr int num_data_types{4}; // not sure what this number should actually be....
 	int _next_type{0};
 
-	int _uart_fd;
+	int _fd;
 
 };

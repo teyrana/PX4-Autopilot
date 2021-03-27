@@ -160,6 +160,8 @@ private:
 
 	CRSFTelemetry *_crsf_telemetry{nullptr};
 	GHSTTelemetry *_ghst_telemetry{nullptr};
+	//DSMTelemetry *_dsm_telemetry{nullptr};
+	//SRXLTelemetry *_srxl_telemetry{nullptr};
 
 	perf_counter_t	_cycle_perf;
 	perf_counter_t	_publish_interval_perf;

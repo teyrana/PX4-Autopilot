@@ -89,14 +89,8 @@ RCInput::init()
 	// dsm_init sets some file static variables and returns a file descriptor
 	// it also powers on the radio if needed
 
-	// /// TODO: old version
-	// _rcs_fd = dsm_init(_device);
-
-	// see:  px4_platform_common/board_common.h:434
-#ifndef RC_SERIAL_SINGLEWIRE
-	static_assert("executable doesn't support single wire -- cannot support DSM / SRXL");
-#endif
-	_rcs_fd = dsm_init(_device,  board_rc_singlewire(_device));
+	/// TODO: old version
+	_rcs_fd = dsm_init(_device);
 
 	if (_rcs_fd < 0) {
 		return -errno;
@@ -824,9 +818,10 @@ int RCInput::print_status()
 
 		case RC_SCAN_DSM:
 			// DSM status output
-#if defined(SPEKTRUM_POWER)
-			PX4_INFO("Spektrum Telemetry: %s", _dsm_telemetry ? "yes" : "no");
-#endif
+// #if defined(SPEKTRUM_POWER)
+// 			PX4_INFO("Spektrum Telemetry: %s", _dsm_telemetry ? "yes" : "no");
+// 			PX4_INFO("Spektrum Telemetry: %s", _srxl_telemetry ? "yes" : "no");
+// #endif
 			break;
 
 		case RC_SCAN_PPM:

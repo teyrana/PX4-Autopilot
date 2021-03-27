@@ -40,6 +40,11 @@
  *
  */
 
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+#include <math.h>
+#include <termios.h>
 
 #include <board_config.h>
 #include <px4_defines.h>
@@ -49,11 +54,6 @@
 #include <px4_platform_common/posix.h>
 #include <px4_platform_common/px4_config.h>
 #include <px4_platform_common/tasks.h>
-
-#include <fcntl.h>
-#include <unistd.h>
-#include <string.h>
-#include <math.h>
 
 #include <systemlib/err.h>
 #include <drivers/drv_hrt.h>
@@ -72,7 +72,7 @@ static int spektrum_task;
 static int uart;
 static volatile bool should_bind = false;
 
-static unsigned long int sentPackets = 0;
+static unsigned int sentPackets = 0;
 /* Default values for arguments */
 const char *rc_device_name = NULL;
 
@@ -129,7 +129,11 @@ static int spektrum_telemetry_thread_main(int argc, char *argv[])
 	}
 
 	dsm_proto_init();
-	int ret = dsm_config(uart, board_supports_single_wire(RC_UXART_BASE));
+
+	// // old version
+	// int ret = dsm_config(uart, board_supports_single_wire(RC_UXART_BASE));
+	// new version
+	int ret = dsm_config(uart, true);
 
 	if (ret != 0) {
 		close(uart);
@@ -137,8 +141,9 @@ static int spektrum_telemetry_thread_main(int argc, char *argv[])
 		return -1;
 	}
 
-	dsm_init_telemetry();
-	dsm_update_telemetry();
+	DSMTelemetry dsm(uart);
+	// dsm.init_telemetry();
+	dsm.update();
 
 	thread_running = true;
 
@@ -194,8 +199,8 @@ static int spektrum_telemetry_thread_main(int argc, char *argv[])
 					       &dsm_11_bit, nullptr, nullptr, &phase, input_rc_s::RC_INPUT_MAX_CHANNELS);
 
 			if (rc_updated && phase == 0) {
-				if (srxl_write_next(uart) > 0) {
-					dsm_update_telemetry();
+				if (dsm.write_next(uart) > 0) {
+					dsm.update();
 					sentPackets++;
 				}
 			}

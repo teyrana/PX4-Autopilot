@@ -39,15 +39,19 @@
  * @author Kurt Kiefer <kekiefer@gmail.com>
  */
 
-#include <px4_platform_common/px4_config.h>
-#include <board_config.h>
-#include <px4_defines.h>
-
 #include <fcntl.h>
 #include <unistd.h>
 #include <termios.h>
 #include <string.h>
 #include <math.h>
+
+#include <board_config.h>
+// #include <drivers/drv_adc.h>
+#include <drivers/drv_hrt.h>
+// #include <drivers/drv_rc_input.h>
+// #include <lib/perf/perf_counter.h>
+#include <px4_platform_common/px4_config.h>
+#include <px4_defines.h>
 #include <matrix/math.hpp>
 
 #include <uORB/topics/vehicle_gps_position.h>
@@ -65,6 +69,8 @@
 #include <lib/rc/srxl.h>
 #include "dsm_telemetry.h"
 #include "messages.hpp"
+
+using namespace time_literals;
 
 static SrxlEncoder srxl;
 
@@ -96,37 +102,19 @@ static SpektrumTelemetryItem *const _telemetryItems[] = {
 #define TELEMETRY_ITEM_COUNT (sizeof(_telemetryItems) / sizeof(SpektrumTelemetryItem*))
 
 
-DSMTelemetry(int uart_fd):
-	_uart_fd(uart_fd)
+DSMTelemetry::DSMTelemetry(int fd):
+	_fd(fd)
 {
+#if !defined(DSM_IGNORE_REQUIRED_ITEMS)
+	_requiredTelemetryItems[0]->start();
+	_requiredTelemetryItems[1]->start();
+#endif
+	for (size_t i = 0; i < TELEMETRY_ITEM_COUNT; i++) {
+		_telemetryItems[i]->start();
+	}
 }
 
-bool update( const hrt_abstime & now )
-{
-	const int update_rate_hz = 10;
-
-	if (now - _last_update <= 1_s / (update_rate_hz * num_data_types)) {
-		return false;
-	}
-
-	bool sent = false;
-	switch(_next_type){
-	case 0:
-	case 1:
-	case 2:
-	case 3:
-	default:
-		sent = _dsm_update_telemetry();
-		break;
-	}
-
-	_last_update = now;
-	_next_type = (_next_type + 1) & num_data_type;
-
-	return sent;
-}
-
-static bool _dsm_update_telemetry(void)
+bool DSMTelemetry::update()
 {
 	static uint32_t telemetry_frame_count = 0;
 	telemetry_frame_t frame;
@@ -172,29 +160,43 @@ static bool _dsm_update_telemetry(void)
 	return true;
 }
 
-void dsm_init_telemetry(void)
+bool DSMTelemetry::update( const hrt_abstime & now )
 {
-#if !defined(DSM_IGNORE_REQUIRED_ITEMS)
-	_requiredTelemetryItems[0]->start();
-	_requiredTelemetryItems[1]->start();
-#endif
+	const int update_rate_hz = 10;
 
-	for (size_t i = 0; i < TELEMETRY_ITEM_COUNT; i++) {
-		_telemetryItems[i]->start();
+	if (now - _last_update <= 1_s / (update_rate_hz * num_data_types)) {
+		return false;
 	}
+
+	bool sent = false;
+	switch(_next_type){
+	case 0:
+	case 1:
+	case 2:
+	case 3:
+	default:
+		sent = update();
+		break;
+	}
+
+	_last_update = now;
+	_next_type = (_next_type + 1) & num_data_types;
+
+	return sent;
 }
 
-// size_t srxl_write_next(int fd)
-// {
-// 	size_t total = 0;
-// 	SrxlBuffer *srxlBuffer;
-// 	size_t srxlBufLen = srxl.getFrame(&srxlBuffer);
 
-// 	while (srxlBufLen > 0) {
-// 		ssize_t written = write(fd, &(*srxlBuffer)[total], srxlBufLen);
-// 		srxlBufLen -= written;
-// 		total += written;
-// 	}
+size_t DSMTelemetry::write_next(int fd)
+{
+	size_t total = 0;
+	SrxlBuffer *srxlBuffer;
+	size_t srxlBufLen = srxl.getFrame(&srxlBuffer);
 
-// 	return total;
-// }
+	while (srxlBufLen > 0) {
+		ssize_t written = write(fd, &(*srxlBuffer)[total], srxlBufLen);
+		srxlBufLen -= written;
+		total += written;
+	}
+
+	return total;
+}
