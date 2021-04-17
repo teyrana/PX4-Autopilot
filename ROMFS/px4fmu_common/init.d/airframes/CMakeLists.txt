@@ -168,4 +168,8 @@ px4_add_romfs_files(
 	60000_uuv_generic
 	60001_uuv_hippocampus
 	60002_uuv_bluerov2_heavy
+
+	# [70000, 71000] (Unmanned) Surface Robots
+	70000_boat_generic
+
 )

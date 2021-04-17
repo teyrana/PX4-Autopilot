@@ -1,0 +1,26 @@
+#!/bin/sh
+#
+# Standard apps for boats. Attitude/Position estimator, Attitude/Position control.
+#
+# NOTE: Script variables are declared/initialized/unset in the rcS script.
+#
+
+###############################################################################
+#                       Begin Estimator Group Selection                       #
+###############################################################################
+
+ekf2 start &
+
+###############################################################################
+#                        End Estimator Group Selection                        #
+###############################################################################
+
+# Start UUV Attitude Controller.
+boat_pos_control start
+
+# Start attitude controllers.
+rover_pos_control start
+
+
+# Start Land Detector.
+land_detector start rover

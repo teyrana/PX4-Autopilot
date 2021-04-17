@@ -1,17 +1,23 @@
 #!/bin/sh
 #
-# UGV default parameters.
+# Boat default parameters.
 #
 # NOTE: Script variables are declared/initialized/unset in the rcS script.
 #
 
-set VEHICLE_TYPE rover
+set VEHICLE_TYPE boat
 
 #
-# Default parameters for UGVs.
+# Default parameters for UGVs:
+# May or may not want to change for boats:
 #
 param set-default MIS_LTRMIN_ALT 0.01
 param set-default MIS_TAKEOFF_ALT 0.01
+
+
+# param set-default PWM_MAIN_MAX 1950
+# param set-default PWM_MAIN_MIN 1050
+# param set-default PWM_MAIN_DISARM 1500
 
 param set-default NAV_DLL_ACT 0
 param set-default NAV_ACC_RAD 2
