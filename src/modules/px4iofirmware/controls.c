@@ -93,7 +93,7 @@ bool dsm_port_input(uint16_t *rssi, bool *dsm_updated, bool *st24_updated, bool 
 	int8_t spektrum_rssi;
 	unsigned frame_drops;
 	*dsm_updated = dsm_input(_dsm_fd, r_raw_rc_values, &r_raw_rc_count, &dsm_11_bit, &n_bytes, &bytes,
-				 &spektrum_rssi, &frame_drops, NULL, PX4IO_RC_INPUT_CHANNELS);
+				 &spektrum_rssi, &frame_drops, PX4IO_RC_INPUT_CHANNELS);
 
 	if (*dsm_updated) {
 
