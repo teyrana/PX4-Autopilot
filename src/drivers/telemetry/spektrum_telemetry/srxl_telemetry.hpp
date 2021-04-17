@@ -54,20 +54,20 @@
 // #include <drivers/drv_pwm_output.h>
 // #include <drivers/drv_sbus.h>
 
-class DSMTelemetry
+class SRXLTelemetry
 {
 public:
 
 	/// \brief enforce using the construct with a serial-port file-descriptior
-	DSMTelemetry() = delete;
+	SRXLTelemetry() = delete;
 
 	/**
 	 * @param fd file descriptor for the UART to use. It is expected to be configured
 	 * already.
 	 */
-	DSMTelemetry(int _fd);
+	SRXLTelemetry(int _fd);
 
-	~DSMTelemetry() = default;
+	~SRXLTelemetry() = default;
 
 
 	/**
@@ -79,6 +79,11 @@ public:
 	bool update( const hrt_abstime & now );
 
 	size_t write_next(int fd);
+
+	// copied from frsky_telemetry module.  Not sure if it'll be useful, yet.
+	// usage:
+	//      s
+	void set_uart_single_wire(int uart, bool single_wire);
 
 private:
 	hrt_abstime _last_update{0};

@@ -66,8 +66,8 @@
 #include <uORB/topics/log_message.h>
 
 #include <lib/rc/dsm.h>
-#include <lib/rc/srxl.h>
-#include "dsm_telemetry.h"
+#include <lib/rc/srxl.hpp>
+#include "srxl_telemetry.hpp"
 #include "messages.hpp"
 
 using namespace time_literals;
@@ -102,7 +102,7 @@ static SpektrumTelemetryItem *const _telemetryItems[] = {
 #define TELEMETRY_ITEM_COUNT (sizeof(_telemetryItems) / sizeof(SpektrumTelemetryItem*))
 
 
-DSMTelemetry::DSMTelemetry(int fd):
+SRXLTelemetry::DSMTelemetry(int fd):
 	_fd(fd)
 {
 #if !defined(DSM_IGNORE_REQUIRED_ITEMS)
@@ -114,7 +114,7 @@ DSMTelemetry::DSMTelemetry(int fd):
 	}
 }
 
-bool DSMTelemetry::update()
+bool SRXLTelemetry::update()
 {
 	static uint32_t telemetry_frame_count = 0;
 	telemetry_frame_t frame;
@@ -160,7 +160,16 @@ bool DSMTelemetry::update()
 	return true;
 }
 
-bool DSMTelemetry::update( const hrt_abstime & now )
+
+void SRXLTelemetry::set_uart_single_wire(int uart, bool single_wire)
+{
+	if (ioctl(uart, TIOCSSINGLEWIRE, single_wire ? (SER_SINGLEWIRE_ENABLED | SER_SINGLEWIRE_PUSHPULL |
+			SER_SINGLEWIRE_PULLDOWN) : 0) < 0) {
+		PX4_WARN("setting TIOCSSINGLEWIRE failed");
+	}
+}
+
+bool SRXLTelemetry::update( const hrt_abstime & now )
 {
 	const int update_rate_hz = 10;
 
@@ -186,7 +195,7 @@ bool DSMTelemetry::update( const hrt_abstime & now )
 }
 
 
-size_t DSMTelemetry::write_next(int fd)
+size_t SRXLTelemetry::write_next(int fd)
 {
 	size_t total = 0;
 	SrxlBuffer *srxlBuffer;

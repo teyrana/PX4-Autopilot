@@ -30,14 +30,16 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ############################################################################
-px4_add_module(
-	MODULE drivers__spektrum_telemetry
-	MAIN spektrum_telemetry
-	STACK_MAIN 1200
-	COMPILE_FLAGS
-	SRCS
-		dsm_telemetry.cpp
-		spektrum_telemetry.cpp
-	MODULE_CONFIG
-		module.yaml
-	)
+
+# # disable for now. Until I have verified the hardware connection.
+# px4_add_module(
+# 	MODULE drivers__spektrum_telemetry
+# 	MAIN spektrum_telemetry
+# 	STACK_MAIN 1200
+# 	COMPILE_FLAGS
+# 	SRCS
+# 		srxl_telemetry.cpp
+# 		spektrum_telemetry.cpp
+# 	MODULE_CONFIG
+# 		module.yaml
+# 	)

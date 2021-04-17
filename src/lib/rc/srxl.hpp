@@ -102,11 +102,11 @@ public:
 
 	srxl_frame_t& get_frame();
 
-	size_t get_buffer( uint8_t*& buf_ref, size_t& buf_size);
+	void get_buffer( uint8_t*& buf_ref, size_t& buf_size);
 
 	static constexpr bool is_srxl_telemetry(srxl_frame_t& frame);
 
-	static constexpr size_t get_frame_length(srxl_frame_t& frame);
+	static constexpr uint8_t get_frame_length(srxl_frame_t& frame);
 
 private:
 	// raw buffer; will match bytes on/to/from the wire

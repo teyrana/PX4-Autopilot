@@ -41,19 +41,20 @@ void SRXLCodec::set_payload(uint8_t *payload, size_t length, srxl_frame_t& frame
 	crc_dest[0] = static_cast<uint8_t>(crc >> 8);   // MSB?
 	crc_dest[1] = static_cast<uint8_t>(crc & 0xFF); // LSB?
 
-	_bytes_to_transmit = get_frame_length(frame);
+	// TODO: Fix me!
+	// _bytes_to_transmit = get_frame_length(frame);
 }
 
 constexpr uint8_t SRXLCodec::get_frame_length(srxl_frame_t& frame){
 	return frame.length;
 }
 
-srxl_frame_t& SRXLCodec::getFrame()
+SRXLCodec::srxl_frame_t& SRXLCodec::get_frame()
 {
 	return _frame_buffer;
 }
 
-void SRXLCodec::get_frame(SrxlBuffer*& buffer, size_t& buf_size){
+void SRXLCodec::get_buffer(uint8_t*& buffer, size_t& buf_size){
 	buffer = _receive_buffer;
-	buf_size = _receive_buffer.size();
+	buf_size = _bytes_received;
 }

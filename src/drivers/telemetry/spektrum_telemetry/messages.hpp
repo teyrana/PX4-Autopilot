@@ -52,8 +52,6 @@ typedef int32_t INT32;
 typedef uint64_t UINT64;
 typedef float FP32;
 
-#include "spektrum_telemetry_defs.h"
-
 typedef struct telemety_frame_s {
 	UN_TELEMETRY telemetry;
 } telemetry_frame_t;

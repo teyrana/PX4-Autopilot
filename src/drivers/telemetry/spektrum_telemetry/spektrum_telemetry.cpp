@@ -60,8 +60,8 @@
 #include <uORB/topics/input_rc.h>
 
 #include <lib/rc/sbus.h>
-#include <lib/rc/dsm.h>
-#include "dsm_telemetry.h"
+#include <lib/rc/srxl.hpp>
+#include "spektrum_telemetry.hpp"
 
 using namespace time_literals;
 
@@ -128,12 +128,12 @@ static int spektrum_telemetry_thread_main(int argc, char *argv[])
 		return -1;
 	}
 
-	dsm_proto_init();
+	_srxl_codec::config();
 
 	// // old version
-	// int ret = dsm_config(uart, board_supports_single_wire(RC_UXART_BASE));
+	int ret = dsm_config(uart, board_supports_single_wire(RC_UXART_BASE));
 	// new version
-	int ret = dsm_config(uart, true);
+	int ret = _srxl_codec::config(uart, true);
 
 	if (ret != 0) {
 		close(uart);
@@ -147,7 +147,7 @@ static int spektrum_telemetry_thread_main(int argc, char *argv[])
 
 	thread_running = true;
 
-	PX4_INFO("starting Spektrum DSM telemetry");
+	PX4_INFO("starting Spektrum SRXL telemetry");
 
 	// wakeup source
 	struct pollfd fds[1] = {};
