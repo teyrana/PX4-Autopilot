@@ -695,6 +695,7 @@ void RCInput::Run()
 				}
 
 			} else {
+#ifdef BOARD_SUPPORTS_RC_SERIAL_PORT_OUTPUT
 				// Scan the next protocol
 				set_rc_scan_state(RC_SCAN_SRXL);
 			}
@@ -702,28 +703,24 @@ void RCInput::Run()
 			break;
 
 		case RC_SCAN_SRXL:
+			if (_rc_scan_begin == 0) {
+				_rc_scan_begin = cycle_timestamp;
 
+				// Configure serial port for SRXL
+				PX4_DEBUG("RCscan: >>> trying to init SRXL... ");
+				SRXLCodec::config(_rcs_fd);
 
-#ifdef SKIP_SECTION
-// #ifdef BOARD_SUPPORTS_RC_SERIAL_PORT_OUTPUT
-			// if (_rc_scan_begin == 0) {
-			// _rc_scan_begin = cycle_timestamp;
+				// DEBUG ONLY -- circumvent the `_rc_scan_locked` block, below
+				_rc_scan_begin += 2*rc_scan_max;
+				// DEBUG ONLY
 
-// 				dsm_init(?
-// 				// Configure serial port for DSM
-// 				// SRXLCodec::config(_rcs_fd);
-
-// 				rc_io_invert(false);
-
-			// } else if (_rc_scan_locked
-// 				   || cycle_timestamp - _rc_scan_begin < rc_scan_max) {
-
+			} else if (_rc_scan_locked || cycle_timestamp - _rc_scan_begin < rc_scan_max) {
+				PX4_DEBUG("RCscan: SRXL locked? ");
 // 				// parse new data
 // 				// NYI -- this block is probably broken
 
-// 				if (newBytes > 0) {
-// 					int8_t dsm_rssi = 0;
-// 					bool dsm_11_bit = false;
+
+				if (newBytes > 0) {
 
 // 					// parse new data
 // 					// rc_updated = SRXLCodec::Parse( cycle_timestamp, &_rcs_buf[0], newBytes, &_raw_rc_values[0], &_raw_rc_count,
@@ -737,16 +734,14 @@ void RCInput::Run()
 // 							   false, false, frame_drops, dsm_rssi);
 // 						_rc_scan_locked = true;
 // 					}
-// 				}
-				printf("RCScan: SCAN-SRXL Failed. NYI\n");
+				}
+				PX_DEBUG("RCScan: SCAN-SRXL Failed. NYI\n");
 			} else {
+#endif // #ifdef BOARD_SUPPORTS_RC_SERIAL_PORT_OUTPUT
 				// Scan the next protocol
 				set_rc_scan_state(RC_SCAN_SBUS);
 			}
-#else // #ifdef BOARD_SUPPORTS_RC_SERIAL_PORT_OUTPUT
-			set_rc_scan_state(RC_SCAN_SBUS);
-#endif
-
+			break;
 		}
 
 		perf_end(_cycle_perf);
