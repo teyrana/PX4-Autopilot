@@ -31,6 +31,8 @@
  *
  ****************************************************************************/
 
+#define DEBUG_BUILD
+
 #include "RCInput.hpp"
 
 #include "crsf_telemetry.h"
@@ -71,6 +73,9 @@ RCInput::~RCInput()
 #endif
 	dsm_deinit();
 
+	// TODO: need call?
+	// SRXLCodec::~SRXLCodec();
+
 	delete _crsf_telemetry;
 	delete _ghst_telemetry;
 
@@ -88,11 +93,10 @@ RCInput::init()
 
 	// dsm_init sets some file static variables and returns a file descriptor
 	// it also powers on the radio if needed
+	_rcs_fd = dsm_init(_device);
 
-	// /// TODO: old version
-	// _rcs_fd = dsm_init(_device);
-
-	_rcs_fd = dsm_init(RC_SERIAL_PORT, board_supports_single_wire(RC_UXART_BASE));
+	// TODO: need call?
+	// _rcs_fd = SRXLCodec::init(_device);
 
 	if (_rcs_fd < 0) {
 		return -errno;
@@ -449,12 +453,9 @@ void RCInput::Run()
 		case RC_SCAN_DSM:
 			if (_rc_scan_begin == 0) {
 				_rc_scan_begin = cycle_timestamp;
-
 				// Configure serial port for DSM
-				// dsm_config(_rcs_fd);  // old version
-				// rc_io_invert(false);  // old version
-				dsm_config(_rcs_fd, board_supports_single_wire(RC_UXART_BASE));
-				rc_io_invert(false, RC_UXART_BASE);
+				dsm_config(_rcs_fd);
+				rc_io_invert(false);
 
 			} else if (_rc_scan_locked
 				   || cycle_timestamp - _rc_scan_begin < rc_scan_max) {
@@ -465,7 +466,7 @@ void RCInput::Run()
 
 					// parse new data
 					rc_updated = dsm_parse(cycle_timestamp, &_rcs_buf[0], newBytes, &_raw_rc_values[0], &_raw_rc_count,
-							       &dsm_11_bit, &frame_drops, &dsm_rssi, nullptr, input_rc_s::RC_INPUT_MAX_CHANNELS);
+							       &dsm_11_bit, &frame_drops, &dsm_rssi, input_rc_s::RC_INPUT_MAX_CHANNELS);
 
 					if (rc_updated) {
 						// we have a new DSM frame. Publish it.
@@ -487,10 +488,8 @@ void RCInput::Run()
 			if (_rc_scan_begin == 0) {
 				_rc_scan_begin = cycle_timestamp;
 				// Configure serial port for DSM
-				// dsm_config(_rcs_fd);  // old version
-				// rc_io_invert(false);  // old version
-				dsm_config(_rcs_fd, false);
-				rc_io_invert(false, RC_UXART_BASE);
+				dsm_config(_rcs_fd);
+				rc_io_invert(false);
 
 			} else if (_rc_scan_locked
 				   || cycle_timestamp - _rc_scan_begin < rc_scan_max) {
@@ -537,10 +536,8 @@ void RCInput::Run()
 			if (_rc_scan_begin == 0) {
 				_rc_scan_begin = cycle_timestamp;
 				// Configure serial port for DSM
-				// dsm_config(_rcs_fd);  // old version
-				// rc_io_invert(false);  // old version
-				dsm_config(_rcs_fd, false);
-				rc_io_invert(false, RC_UXART_BASE);
+				dsm_config(_rcs_fd);
+				rc_io_invert(false);
 
 			} else if (_rc_scan_locked
 				   || cycle_timestamp - _rc_scan_begin < rc_scan_max) {
@@ -699,23 +696,72 @@ void RCInput::Run()
 
 			} else {
 				// Scan the next protocol
-				set_rc_scan_state(RC_SCAN_SBUS);
+				set_rc_scan_state(RC_SCAN_SRXL);
 			}
 
 			break;
+
+		case RC_SCAN_SRXL:
+
+
+#ifdef SKIP_SECTION
+// #ifdef BOARD_SUPPORTS_RC_SERIAL_PORT_OUTPUT
+			// if (_rc_scan_begin == 0) {
+			// _rc_scan_begin = cycle_timestamp;
+
+// 				dsm_init(?
+// 				// Configure serial port for DSM
+// 				// SRXLCodec::config(_rcs_fd);
+
+// 				rc_io_invert(false);
+
+			// } else if (_rc_scan_locked
+// 				   || cycle_timestamp - _rc_scan_begin < rc_scan_max) {
+
+// 				// parse new data
+// 				// NYI -- this block is probably broken
+
+// 				if (newBytes > 0) {
+// 					int8_t dsm_rssi = 0;
+// 					bool dsm_11_bit = false;
+
+// 					// parse new data
+// 					// rc_updated = SRXLCodec::Parse( cycle_timestamp, &_rcs_buf[0], newBytes, &_raw_rc_values[0], &_raw_rc_count,
+// 					// 				&dsm_11_bit, &frame_drops, &dsm_rssi, input_rc_s::RC_INPUT_MAX_CHANNELS);
+
+// 					if (rc_updated) {
+// 						// we have a new SRXL frame. Publish it.
+// 						_rc_in.input_source = input_rc_s::RC_INPUT_SOURCE_PX4FMU_SRXL;
+// 						// not sure what this call does, either
+// 						fill_rc_in(_raw_rc_count, _raw_rc_values, cycle_timestamp,
+// 							   false, false, frame_drops, dsm_rssi);
+// 						_rc_scan_locked = true;
+// 					}
+// 				}
+			printf("RCScan: SCAN-SRXL Failed. NYI\n");
+
+		} else {
+			// Scan the next protocol
+			set_rc_scan_state(RC_SCAN_SBUS);
 		}
 
-		perf_end(_cycle_perf);
+#else // #ifdef BOARD_SUPPORTS_RC_SERIAL_PORT_OUTPUT
+			set_rc_scan_state(RC_SCAN_SBUS);
+#endif
 
-		if (rc_updated) {
-			perf_count(_publish_interval_perf);
-
-			_to_input_rc.publish(_rc_in);
-
-		} else if (!rc_updated && ((hrt_absolute_time() - _rc_in.timestamp_last_signal) > 1_s)) {
-			_rc_scan_locked = false;
-		}
 	}
+
+	perf_end(_cycle_perf);
+
+	if (rc_updated) {
+		perf_count(_publish_interval_perf);
+
+		_to_input_rc.publish(_rc_in);
+
+	} else if (!rc_updated && ((hrt_absolute_time() - _rc_in.timestamp_last_signal) > 1_s)) {
+		_rc_scan_locked = false;
+	}
+}
 }
 
 #if defined(SPEKTRUM_POWER)
@@ -773,13 +819,14 @@ int RCInput::custom_command(int argc, char *argv[])
 		return 0;
 	}
 
-#endif /* SPEKTRUM_POWER */
-
+	// Not Yet Implemented.
 	// if (!strcmp(verb, "bind_srxl")) {
-	// 	PX4_INFO("Binding spektrum srxl receiver");
-	// 	dsm_bind_srxl(_rcs_fd);
+	// 	PX4_INFO("Binding Spektrum SRXL receiver");
+	// 	SRXLDriver::bind(_rcs_fd);
 	// 	return 0;
 	// }
+
+#endif /* SPEKTRUM_POWER */
 
 	/* start the FMU if not running */
 	if (!is_running()) {
@@ -821,8 +868,9 @@ int RCInput::print_status()
 
 		case RC_SCAN_DSM:
 			// DSM status output
-#if defined(SPEKTRUM_POWER)
-#endif
+// #if defined(SPEKTRUM_POWER)
+// 			PX4_INFO("Spektrum Telemetry: %s", _dsm_telemetry ? "yes" : "no");
+// #endif
 			break;
 
 		case RC_SCAN_PPM:
@@ -836,6 +884,14 @@ int RCInput::print_status()
 		case RC_SCAN_ST24:
 			// SUMD status output
 			break;
+
+		case RC_SCAN_SRXL:
+#ifdef SPEKTRUM_POWER
+			// PX4_INFO("SBUS frame drops: %u", sbus_dropped_frames());
+			// PX4_INFO("Spektrum Telemetry: %s", _srxl_telemetry ? "yes" : "no");
+#endif
+			break;
+
 		}
 	}
 

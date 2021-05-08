@@ -49,13 +49,8 @@
 #include <termios.h>
 #include <string.h>
 
-#ifdef TIOCSSINGLEWIRE
-#include <sys/ioctl.h>
-#endif
-
 #include "dsm.h"
 #include "spektrum_rssi.h"
-#include "srxl.h"
 #include "common_rc.h"
 #include <drivers/drv_hrt.h>
 
@@ -87,10 +82,6 @@ static unsigned dsm_channel_shift = 0;			/**< Channel resolution, 0=unknown, 10=
 static unsigned dsm_frame_drops = 0;			/**< Count of incomplete DSM frames */
 static uint16_t dsm_chan_count = 0;         /**< DSM channel count */
 static uint16_t dsm_chan_count_prev = 0;    /**< last valid DSM channel count */
-
-static bool
-dsm_decode(hrt_abstime frame_time, uint16_t *values, uint16_t *num_values, bool *dsm_11_bit, unsigned max_values,
-	   int8_t *rssi_percent, uint8_t *phase);
 
 /**
  * Attempt to decode a single channel raw channel datum
@@ -359,8 +350,7 @@ static bool dsm_guess_format(bool reset)
 	return false;
 }
 
-int
-dsm_config(int fd, bool singlewire)
+int dsm_config(int fd)
 {
 #ifdef SPEKTRUM_POWER_CONFIG
 	// Enable power controls for Spektrum receiver
@@ -382,15 +372,6 @@ dsm_config(int fd, bool singlewire)
 		cfsetspeed(&t, 115200);
 		t.c_cflag &= ~(CSTOPB | PARENB);
 		tcsetattr(fd, TCSANOW, &t);
-
-		if (singlewire) {
-			/* only defined in configs capable of IOCTL
-			 * Note It is never turned off
-			 */
-#ifdef TIOCSSINGLEWIRE
-			ioctl(fd, TIOCSSINGLEWIRE, SER_SINGLEWIRE_ENABLED);
-#endif
-		}
 
 		/* initialise the decoder */
 		dsm_partial_frame_count = 0;
@@ -424,8 +405,7 @@ void dsm_proto_init()
  *
  * @param[in] device Device name of DSM UART
  */
-int
-dsm_init(const char *device, bool singlewire)
+int dsm_init(const char *device)
 {
 	if (dsm_fd < 0) {
 		dsm_fd = open(device, O_RDWR | O_NONBLOCK);
@@ -433,7 +413,7 @@ dsm_init(const char *device, bool singlewire)
 
 	dsm_proto_init();
 
-	int ret = dsm_config(dsm_fd, singlewire);
+	int ret = dsm_config(dsm_fd);
 
 	if (!ret) {
 		return dsm_fd;
@@ -523,51 +503,6 @@ void dsm_bind(uint16_t cmd, int pulses)
 }
 #endif
 
-#pragma pack(push, 1)
-typedef struct dsm_bind_s {
-	uint8_t request;
-	uint64_t guid;
-	uint8_t type;
-	uint32_t chip_id;
-} dsm_bind_t;
-#pragma pack(pop)
-
-static SrxlEncoder srxl;
-
-ssize_t dsm_bind_srxl(int fd)
-{
-	SrxlBuffer *buffer;
-	size_t srxl_length;
-
-	dsm_bind_t payload;
-
-	uuid_uint32_t uid;
-	//board_get_uuid32(uid);
-	*uid = 12345678;
-
-	payload.request = 0xEB;
-	payload.guid = *uid;
-	payload.type = 0x09; //0xB2;
-	payload.chip_id = 0;
-
-	srxl.setPayload(&payload, sizeof(payload), SRXL_VERSION_BIND_INFO);
-	srxl_length = srxl.getFrame(&buffer);
-
-	/*
-	if (fd < 0)
-		fd = dsm_fd;
-
-	for (size_t total = 0; total < srxl_length;) {
-		ssize_t written = write(fd, &(*buffer)[total], srxl_length - total);
-		total += written;
-	}
-
-	return TRUE;
-	*/
-
-	return write(fd, *buffer, srxl_length);
-}
-
 /**
  * Decode the entire dsm frame (all contained channels)
  *
@@ -577,7 +512,7 @@ ssize_t dsm_bind_srxl(int fd)
  * @return true=DSM frame successfully decoded, false=no update
  */
 bool dsm_decode(hrt_abstime frame_time, uint16_t *values, uint16_t *num_values, bool *dsm_11_bit, unsigned max_values,
-		int8_t *rssi_percent, uint8_t *phase)
+		int8_t *rssi_percent)
 {
 	/*
 	debug("DSM dsm_frame %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x",
@@ -719,11 +654,6 @@ bool dsm_decode(hrt_abstime frame_time, uint16_t *values, uint16_t *num_values, 
 	/* Set the 11-bit data indicator */
 	*dsm_11_bit = (dsm_channel_shift == 11);
 
-	if (phase) {
-		/* Set the phase so we know when we can send telemetry */
-		*phase = dsm_frame[2] >> 7;
-	}
-
 	/* we have received something we think is a dsm_frame */
 	dsm_last_frame_time = frame_time;
 
@@ -776,7 +706,7 @@ bool dsm_decode(hrt_abstime frame_time, uint16_t *values, uint16_t *num_values, 
  * @return true=decoded raw channel values updated, false=no update
  */
 bool dsm_input(int fd, uint16_t *values, uint16_t *num_values, bool *dsm_11_bit, uint8_t *n_bytes, uint8_t **bytes,
-		int8_t *rssi, unsigned *frame_drops, uint8_t *phase, unsigned max_values)
+	       int8_t *rssi, unsigned *frame_drops, unsigned max_values)
 {
 	/*
 	 * The S.BUS protocol doesn't provide reliable framing,
@@ -814,11 +744,11 @@ bool dsm_input(int fd, uint16_t *values, uint16_t *num_values, bool *dsm_11_bit,
 	/*
 	 * Try to decode something with what we got
 	 */
-	return dsm_parse(now, &dsm_buf[0], ret, values, num_values, dsm_11_bit, &dsm_frame_drops, rssi, phase, max_values);
+	return dsm_parse(now, &dsm_buf[0], ret, values, num_values, dsm_11_bit, &dsm_frame_drops, rssi, max_values);
 }
 
 bool dsm_parse(const uint64_t now, const uint8_t *frame, const unsigned len, uint16_t *values,
-		uint16_t *num_values, bool *dsm_11_bit, unsigned *frame_drops, int8_t *rssi_percent, uint8_t *phase, uint16_t max_channels)
+	       uint16_t *num_values, bool *dsm_11_bit, unsigned *frame_drops, int8_t *rssi_percent, uint16_t max_channels)
 {
 	/* this is set by the decoding state machine and will default to false
 	 * once everything that was decodable has been decoded.
@@ -842,7 +772,7 @@ bool dsm_parse(const uint64_t now, const uint8_t *frame, const unsigned len, uin
 #endif
 		}
 
-		if (dsm_partial_frame_count == DSM_FRAME_SIZE && !SrxlEncoder::isSpektrumTelemetry(dsm_frame)) {
+		if (dsm_partial_frame_count == DSM_FRAME_SIZE) {
 			dsm_partial_frame_count = 0;
 			dsm_decode_state = DSM_DECODE_STATE_DESYNC;
 #ifdef DSM_DEBUG
@@ -881,20 +811,11 @@ bool dsm_parse(const uint64_t now, const uint8_t *frame, const unsigned len, uin
 					break;
 				}
 
-				/* check if we are reading an echoed back telemetry frame */
-				if (SrxlEncoder::isSpektrumTelemetry(dsm_frame)) {
-					/* read until we've got the whole thing, then reset */
-					if (dsm_partial_frame_count == SrxlEncoder::getFrameLength(dsm_frame)) {
-						dsm_partial_frame_count = 0;
-					}
-					break;
-				}
-
 				/*
 				 * Great, it looks like we might have a frame.  Go ahead and
 				 * decode it.
 				 */
-				decode_ret = dsm_decode(now, &dsm_chan_buf[0], &dsm_chan_count, dsm_11_bit, max_channels, rssi_percent, phase);
+				decode_ret = dsm_decode(now, &dsm_chan_buf[0], &dsm_chan_count, dsm_11_bit, max_channels, rssi_percent);
 
 				/* we consumed the partial frame, reset */
 				dsm_partial_frame_count = 0;
