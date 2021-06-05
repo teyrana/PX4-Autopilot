@@ -71,9 +71,6 @@ RCInput::~RCInput()
 #endif
 	dsm_deinit();
 
-	// TODO: need call?
-	// SRXLCodec::~SRXLCodec();
-
 	delete _crsf_telemetry;
 	delete _ghst_telemetry;
 
